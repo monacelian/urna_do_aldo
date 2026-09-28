@@ -1,0 +1,267 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="UTF-8">
+<title>Urna Escolar - Estilo TSE</title>
+<style>
+body { font-family: Arial, sans-serif; background: #e0e0e0; display: flex; justify-content: center; align-items: center; height: 100vh; margin: 0; }
+#urna { display: flex; background: #ddd; border-radius: 12px; box-shadow: 0 0 15px rgba(0,0,0,0.5); padding: 10px; }
+#quadro { width: 400px; height: 280px; background: white; border-radius: 8px; padding: 15px; margin-right: 15px; text-align: center; display: flex; flex-direction: column; justify-content: flex-start; font-size: 16px; }
+#cargo-nome { font-weight: bold; margin-bottom: 5px; font-size: 18px; }
+#display { font-size: 28px; margin-bottom: 5px; min-height: 40px; }
+#candidato-info { font-size: 14px; min-height: 40px; }
+#turma-info { font-size: 14px; font-weight: bold; margin-top: auto; }
+#teclado { display: grid; grid-template-columns: repeat(3, 90px); grid-template-rows: repeat(4, 90px); gap: 8px; }
+button.tecla { font-size: 16px; border-radius: 8px; border: none; cursor: pointer; font-weight: bold; display: flex; justify-content: center; align-items: center; }
+button.tecla.num { background: black; color: white; }
+button.branco { background: white; color: black; border: 2px solid #999; }
+button.corrige { background: orange; color: white; }
+button.confirmar { background: green; color: white; }
+#fim-votacao { width: 100%; height: 100%; display: flex; justify-content: center; align-items: center; background: #4CAF50; color: white; font-size: 28px; font-weight: bold; border-radius: 8px; display: none; }
+</style>
+</head>
+<body>
+
+<div id="urna">
+    <div id="quadro">
+        <div id="cargo-nome">Cargo: --</div>
+        <div id="display">Número: </div>
+        <div id="candidato-info">Digite o número do candidato</div>
+        <div id="turma-info">Turma: --</div>
+        <button id="fim-votacao" onclick="location.reload()">FIM</button>
+    </div>
+    <div id="teclado">
+        <button class="tecla num" onclick="digitar('1')">1</button>
+        <button class="tecla num" onclick="digitar('2')">2</button>
+        <button class="tecla num" onclick="digitar('3')">3</button>
+        <button class="tecla num" onclick="digitar('4')">4</button>
+        <button class="tecla num" onclick="digitar('5')">5</button>
+        <button class="tecla num" onclick="digitar('6')">6</button>
+        <button class="tecla num" onclick="digitar('7')">7</button>
+        <button class="tecla num" onclick="digitar('8')">8</button>
+        <button class="tecla corrige" onclick="corrigir()">CORRIGE</button>
+        <button class="tecla branco" onclick="votoBranco()">BRANCO</button>
+        <button class="tecla num" onclick="digitar('0')">0</button>
+        <button class="tecla confirmar" onclick="confirmarVoto()">CONFIRMA</button>
+    </div>
+</div>
+
+<audio id="som-confirma" src="/static/audios/confirma.mp3" preload="auto"></audio>
+
+<script>
+let cargos = {{ cargos|tojson }};
+let candidatos = {{ candidatos|tojson }};
+let sessaoAtiva = {{ sessao_ativa|tojson }};
+let sessaoBloqueada = {{ sessao_bloqueada|tojson }};
+let turmaSessao = {{ turma_sessao|tojson }};
+let turmaSessaoNome = "{{ turma_sessao_nome }}";
+
+let cargoIndex = 0;
+let numeroDigitado = "";
+let votosPorCargo = 0;
+let sessaoID = null;
+let somFimTocado = false;
+
+function resetUrna() {
+    cargoIndex = 0;
+    numeroDigitado = "";
+    votosPorCargo = 0;
+    somFimTocado = false;
+    document.getElementById("fim-votacao").style.display = "none";
+    atualizarCargo();
+}
+
+function atualizarDisplayCargo() {
+    let cargo = cargos[cargoIndex];
+    if (!cargo) return;
+    let prox = votosPorCargo < cargo.max_votos ? votosPorCargo + 1 : cargo.max_votos;
+    document.getElementById("cargo-nome").innerText = cargo.nome + " (" + prox + " de " + cargo.max_votos + ")";
+}
+
+function atualizarCargo() {
+    if (!sessaoAtiva || !turmaSessao) {
+        document.getElementById("cargo-nome").innerText = "Nenhuma sessão ativa!";
+        document.getElementById("display").innerText = "";
+        document.getElementById("candidato-info").innerText = "Aguarde o mesário iniciar a votação.";
+        document.getElementById("turma-info").innerText = "";
+        document.getElementById("teclado").style.display = "none";
+        return;
+    }
+
+    if (sessaoBloqueada) {
+        document.getElementById("cargo-nome").innerText = "";
+        document.getElementById("display").innerText = "";
+        document.getElementById("candidato-info").innerText = "Votação Concluída!";
+        document.getElementById("turma-info").innerText = "Turma: " + (turmaSessaoNome || "");
+        document.getElementById("teclado").style.display = "none";
+        document.getElementById("fim-votacao").style.display = "flex";
+
+        if (!somFimTocado) {
+            somFimTocado = true;
+            document.getElementById("som-confirma").play().catch(()=>{});
+        }
+        return;
+    }
+
+    if (cargoIndex >= cargos.length) {
+        document.getElementById("fim-votacao").style.display = "flex";
+        document.getElementById("teclado").style.display = "none";
+
+        if (!somFimTocado) {
+            somFimTocado = true;
+            document.getElementById("som-confirma").play().catch(()=>{});
+        }
+
+        document.getElementById("cargo-nome").innerText = "";
+        document.getElementById("display").innerText = "";
+        document.getElementById("candidato-info").innerText = "";
+        document.getElementById("turma-info").innerText = "";
+        return;
+    }
+
+    let cargo = cargos[cargoIndex];
+    numeroDigitado = "";
+
+    document.getElementById("teclado").style.display = "grid";
+    document.getElementById("fim-votacao").style.display = "none";
+    document.getElementById("display").innerText = "Número: ";
+
+    atualizarDisplayCargo();
+
+    document.getElementById("candidato-info").innerText = "Digite o número do candidato";
+    document.getElementById("turma-info").innerText = "Turma: " + (turmaSessaoNome || "");
+}
+
+function digitar(num) {
+    if (!sessaoAtiva || sessaoBloqueada) return;
+    numeroDigitado += num;
+    document.getElementById("display").innerText = "Número: " + numeroDigitado;
+    mostrarCandidato();
+    atualizarDisplayCargo();
+}
+
+function corrigir() {
+    if (!sessaoAtiva || sessaoBloqueada) return;
+    numeroDigitado = "";
+    document.getElementById("display").innerText = "Número: ";
+    document.getElementById("candidato-info").innerText = "Digite o número do candidato";
+    atualizarDisplayCargo();
+}
+
+function votoBranco() {
+    if (!sessaoAtiva || sessaoBloqueada) return;
+    numeroDigitado = "";
+    document.getElementById("display").innerText = "Número: ";
+    document.getElementById("candidato-info").innerText = "Voto em branco";
+    atualizarDisplayCargo();
+}
+
+function mostrarCandidato() {
+    let cargo = cargos[cargoIndex];
+    if (!cargo) return;
+
+    let cand = candidatos.find(c =>
+        c.cargo_id == cargo.id &&
+        c.numero == numeroDigitado
+    );
+
+    if (cand) {
+        document.getElementById("candidato-info").innerText =
+            cand.nome + " (" + (cand.turma_id_nome || "") + ")";
+    } else if (numeroDigitado.length > 0) {
+        document.getElementById("candidato-info").innerText = "Número inválido";
+    } else {
+        document.getElementById("candidato-info").innerText = "Digite o número do candidato";
+    }
+}
+
+function confirmarVoto() {
+    if (!sessaoAtiva || sessaoBloqueada) {
+        alert("Sessão não ativa ou bloqueada!");
+        return;
+    }
+
+    let infoTexto = document.getElementById("candidato-info").innerText;
+
+    if (numeroDigitado === "" && infoTexto !== "Voto em branco") {
+        alert("Digite o número ou vote em BRANCO!");
+        return;
+    }
+
+    let cargo = cargos[cargoIndex];
+    if (!cargo) return;
+
+    let cand = candidatos.find(c =>
+        c.cargo_id == cargo.id &&
+        c.numero == numeroDigitado
+    );
+
+    if (!cand && numeroDigitado !== "" && infoTexto !== "Voto em branco") {
+        alert("Número inválido, digite novamente!");
+        numeroDigitado = "";
+        document.getElementById("display").innerText = "Número: ";
+        return;
+    }
+
+    let ehBranco = (numeroDigitado === "" && infoTexto === "Voto em branco");
+    let candidato_id = cand ? cand.id : "";
+
+    votosPorCargo++;
+    atualizarDisplayCargo();
+
+    numeroDigitado = "";
+    document.getElementById("display").innerText = "Número: ";
+    document.getElementById("candidato-info").innerText = "Digite o número do candidato";
+
+    if (votosPorCargo >= cargo.max_votos) {
+        votosPorCargo = 0;
+        setTimeout(() => {
+            cargoIndex++;
+            atualizarCargo();
+        }, 700);
+    }
+
+    fetch("/votar", {
+        method: "POST",
+        headers: {"Content-Type": "application/x-www-form-urlencoded"},
+        body:
+            `candidato_id=${candidato_id}` +
+            `&cargo_id=${cargo.id}` +
+            `&turma_id=${turmaSessao || ''}` +
+            `&branco=${ehBranco ? 1 : 0}`
+    })
+    .then(res => res.json())
+    .then(data => {
+        if (data.status !== "ok") {
+            alert("⚠️ " + data.mensagem);
+            atualizarStatus();
+        }
+    })
+    .catch(err => console.error("Erro ao enviar voto:", err));
+}
+
+async function atualizarStatus() {
+    try {
+        let res = await fetch("/status_urna");
+        let data = await res.json();
+
+        sessaoID = data.sessao_id || sessaoID;
+        sessaoAtiva = data.sessao_ativa;
+        sessaoBloqueada = data.bloqueada;
+        turmaSessao = data.turma_sessao;
+        turmaSessaoNome = data.turma_sessao_nome || "";
+        cargos = data.cargos;
+        candidatos = data.candidatos;
+
+        atualizarCargo();
+
+    } catch (err) {
+        console.error("Erro atualizar status:", err);
+    }
+}
+
+atualizarStatus();
+</script>
+
+</body>
+</html>

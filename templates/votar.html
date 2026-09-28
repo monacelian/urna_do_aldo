@@ -1,0 +1,25 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Urna Eletrônica</title>
+</head>
+<body>
+    <h1>🗳️ Votação</h1>
+
+    <form method="post">
+        <label>CPF do eleitor:</label><br>
+        <input type="text" name="cpf" required><br><br>
+
+        <label>Escolha o candidato:</label><br>
+        <select name="candidato" required>
+            {% for c in candidatos %}
+                <option value="{{ c[0] }}">
+                    {{ c[1] }} — {{ c[2] }}
+                </option>
+            {% endfor %}
+        </select><br><br>
+
+        <button type="submit">Votar</button>
+    </form>
+</body>
+</html>

@@ -1,0 +1,66 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="UTF-8">
+<title>Resultados — Urna Eletrônica</title>
+<style>
+body{font-family:Arial;background:#f4f6f9;padding:20px}
+h1{background:#222;color:white;padding:10px;border-radius:6px;text-align:center;}
+.bloco{background:white;padding:15px;margin-bottom:20px;border-radius:8px;box-shadow:0 0 5px rgba(0,0,0,.1);}
+.vencedor{background:#d4edda;font-weight:bold;}
+table{width:100%;border-collapse:collapse;margin-top:10px;}
+th,td{border:1px solid #ccc;padding:8px;text-align:center;}
+th{background:#eee;}
+button{padding:10px;background:#007bff;color:white;border:none;border-radius:6px;cursor:pointer;margin-bottom:10px;}
+</style>
+</head>
+<body>
+
+<h1>📊 RESULTADOS DA URNA</h1>
+<button onclick="atualizarResultados()">🔄 Atualizar</button>
+<button onclick="window.print()">🖨️ Imprimir / Exportar</button>
+
+<div id="resultados"></div>
+
+<script>
+function atualizarResultados(){
+    fetch("/api/resultados")
+    .then(res=>res.json())
+    .then(data=>{
+        let html = "";
+        for(let turma in data){
+            html += `<div class="bloco"><h2>🏫 Turma: ${turma}</h2>`;
+            for(let cargo in data[turma]){
+                html += `<h3>🗳️ ${cargo}</h3>`;
+                let candidatos = data[turma][cargo];
+                if(candidatos.length==0){
+                    html += "<p>Nenhum candidato cadastrado para este cargo.</p>";
+                } else {
+                    html += `<table>
+                        <tr><th>Número</th><th>Nome</th><th>Votos</th><th>Posição</th></tr>`;
+                    candidatos.forEach((c,i)=>{
+                        let cls = (i<c.max_vencedores)?"vencedor":"";
+                        html += `<tr class="${cls}">
+                            <td>${c.numero}</td>
+                            <td>${c.nome}</td>
+                            <td>${c.votos}</td>
+                            <td>${c.max_vencedores>0 ? i+1 : "-"}</td>
+                        </tr>`;
+                    });
+                    html += `</table>`;
+                }
+            }
+            html += `</div>`;
+        }
+        document.getElementById("resultados").innerHTML = html;
+    });
+}
+
+// chama uma vez ao abrir a página
+atualizarResultados();
+// 🔄 atualiza automaticamente a cada 2 segundos (2000 ms)
+setInterval(atualizarResultados, 2000);
+</script>
+
+</body>
+</html>

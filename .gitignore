@@ -1,0 +1,29 @@
+# Ambientes Virtuais e Pacotes
+venv/
+.venv/
+env/
+__pycache__/
+*.pyc
+*.pyo
+*.pyd
+
+# Executáveis e instaladores pesados
+*.exe
+*.msu
+outros/
+build/
+dist/
+*.spec
+
+# Cópias de testes de bancos antigos
+urnas/
+Nova pasta/
+urna - Copia.db
+urna.db original
+*.db-journal
+
+# Logs e IDEs
+*.log
+*.tmp
+.vscode/
+.idea/
