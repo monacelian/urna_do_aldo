@@ -532,6 +532,10 @@ def reiniciar_sessao():
     conn.execute("UPDATE sessao_votacao SET ativa=0 WHERE id=?", (sessao["id"],))
     conn.execute("INSERT INTO sessao_votacao (ativa, bloqueada, data_inicio, turma_id) VALUES (?, ?, ?, ?)",
                  (1, 0, datetime.now(), sessao["turma_id"]))
+    conn.commit()
+    conn.close()
+    return redirect("/admin")
+
 # ==================== Zerar Votos ====================
 @app.route("/admin/zerar_todos_votos", methods=["POST"])
 def zerar_todos_votos():
