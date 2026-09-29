@@ -532,9 +532,27 @@ def reiniciar_sessao():
     conn.execute("UPDATE sessao_votacao SET ativa=0 WHERE id=?", (sessao["id"],))
     conn.execute("INSERT INTO sessao_votacao (ativa, bloqueada, data_inicio, turma_id) VALUES (?, ?, ?, ?)",
                  (1, 0, datetime.now(), sessao["turma_id"]))
+# ==================== Zerar Votos ====================
+@app.route("/admin/zerar_todos_votos", methods=["POST"])
+def zerar_todos_votos():
+    conn = get_db()
+    conn.execute("DELETE FROM votos")
+    conn.execute("UPDATE sessao_votacao SET ativa=0, bloqueada=0")
     conn.commit()
     conn.close()
-    return redirect("/admin")
+    return jsonify({"status": "ok", "mensagem": "Todos os votos foram apagados com sucesso!"})
+
+@app.route("/admin/zerar_votos_turma", methods=["POST"])
+def zerar_votos_turma():
+    turma_id = request.form.get("turma_id")
+    if not turma_id:
+        return jsonify({"status": "erro", "mensagem": "Selecione uma turma válida!"})
+    conn = get_db()
+    conn.execute("DELETE FROM votos WHERE turma_id=?", (turma_id,))
+    conn.execute("UPDATE sessao_votacao SET bloqueada=0 WHERE turma_id=?", (turma_id,))
+    conn.commit()
+    conn.close()
+    return jsonify({"status": "ok", "mensagem": "Votos da turma apagados com sucesso!"})
 
 # ==================== Status automática ====================
 @app.route("/status_urna")

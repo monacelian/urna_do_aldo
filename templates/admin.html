@@ -266,6 +266,43 @@ onclick="abrirModal('candidato',{{ cand.id }}, '{{ cand.nome }}','{{ cand.numero
 </div>
 </div>
 
+<!-- ⚠️ ZERAR VOTOS / ZERÉSIMA -->
+<div class="card border-danger shadow-sm mb-4">
+<div class="card-header bg-danger text-white d-flex justify-content-between align-items-center">
+    <h5 class="mb-0">⚠️ Zerar Votos / Zerésima</h5>
+    <span class="badge bg-light text-danger fw-bold">Área Restrita</span>
+</div>
+<div class="card-body">
+    <p class="text-muted small mb-3">Esta área permite reiniciar a contagem de votos da eleição. <strong>Nenhum cadastro</strong> (turmas, cargos ou candidatos) será apagado.</p>
+    
+    <div class="row g-3">
+        <div class="col-md-6 border-end">
+            <h6 class="fw-bold text-danger">🧹 Zerar Votos de uma Turma Específica</h6>
+            <p class="text-muted small mb-2">Apaga apenas os votos da sala selecionada (útil caso uma sala precise votar novamente).</p>
+            <form id="form-zerar-turma" action="/admin/zerar_votos_turma" method="POST" class="d-flex gap-2">
+                <select name="turma_id" class="form-select form-select-sm" required>
+                    <option value="" disabled selected>Selecione a Turma...</option>
+                    {% for t in turmas %}
+                    <option value="{{ t.id }}">{{ t.nome }}</option>
+                    {% endfor %}
+                </select>
+                <button type="submit" class="btn btn-outline-danger btn-sm text-nowrap" onclick="return confirm('⚠️ Deseja realmente apagar TODOS os votos da turma selecionada?')">Zerar Turma</button>
+            </form>
+            <div id="error-zerar-turma" class="text-danger fw-bold small mt-1"></div>
+        </div>
+
+        <div class="col-md-6">
+            <h6 class="fw-bold text-danger">🗑️ Zerar TODOS os Votos da Eleição (Zerésima)</h6>
+            <p class="text-muted small mb-2">Apaga todos os votos registrados de todas as turmas para iniciar uma eleição do zero.</p>
+            <form id="form-zerar-todos" action="/admin/zerar_todos_votos" method="POST">
+                <button type="submit" class="btn btn-danger btn-sm w-100" onclick="return confirm('🚨 ATENÇÃO: Deseja realmente apagar TODOS OS VOTOS de todas as turmas? Esta ação não pode ser desfeita.')">Zerar Todos os Votos da Urna</button>
+            </form>
+            <div id="error-zerar-todos" class="text-danger fw-bold small mt-1"></div>
+        </div>
+    </div>
+</div>
+</div>
+
 <!-- 📘 GUIA COMPLETO: COMO CONFIGURAR E USAR A URNA -->
 <div class="card shadow-sm mb-4 border-primary">
 <div class="card-header bg-primary text-white d-flex justify-content-between align-items-center">
@@ -471,6 +508,8 @@ document.getElementById("form-turma").addEventListener("submit",e=>{e.preventDef
 document.getElementById("form-cargo").addEventListener("submit",e=>{e.preventDefault();enviarFormularioAjax(e.target,"error-cargo");});
 document.getElementById("form-candidato").addEventListener("submit",e=>{e.preventDefault();enviarFormularioAjax(e.target,"error-candidato");});
 document.getElementById("modal-form").addEventListener("submit",e=>{e.preventDefault();enviarFormularioAjax(e.target,"modal-error");});
+document.getElementById("form-zerar-turma").addEventListener("submit",e=>{e.preventDefault();enviarFormularioAjax(e.target,"error-zerar-turma");});
+document.getElementById("form-zerar-todos").addEventListener("submit",e=>{e.preventDefault();enviarFormularioAjax(e.target,"error-zerar-todos");});
 </script>
 
 </body>
