@@ -60,7 +60,7 @@ let cargoIndex = 0;
 let numeroDigitado = "";
 let votosPorCargo = 0;
 let sessaoID = null;
-let somFimTocado = false;
+let somFimTocado = false; // ⭐ evita repetir som
 
 function resetUrna() {
     cargoIndex = 0;
@@ -79,10 +79,10 @@ function atualizarDisplayCargo() {
 }
 
 function atualizarCargo() {
-    if (!sessaoAtiva || !turmaSessao) {
+    if (!sessaoAtiva) {
         document.getElementById("cargo-nome").innerText = "Nenhuma sessão ativa!";
         document.getElementById("display").innerText = "";
-        document.getElementById("candidato-info").innerText = "Aguarde o mesário iniciar a votação.";
+        document.getElementById("candidato-info").innerText = "A votação está encerrada.";
         document.getElementById("turma-info").innerText = "";
         document.getElementById("teclado").style.display = "none";
         return;
@@ -91,8 +91,8 @@ function atualizarCargo() {
     if (sessaoBloqueada) {
         document.getElementById("cargo-nome").innerText = "";
         document.getElementById("display").innerText = "";
-        document.getElementById("candidato-info").innerText = "Votação Concluída!";
-        document.getElementById("turma-info").innerText = "Turma: " + (turmaSessaoNome || "");
+        document.getElementById("candidato-info").innerText = "Sessão bloqueada!";
+        document.getElementById("turma-info").innerText = "";
         document.getElementById("teclado").style.display = "none";
         document.getElementById("fim-votacao").style.display = "flex";
 
@@ -158,10 +158,10 @@ function votoBranco() {
 
 function mostrarCandidato() {
     let cargo = cargos[cargoIndex];
-    if (!cargo) return;
 
     let cand = candidatos.find(c =>
         c.cargo_id == cargo.id &&
+        (turmaSessao ? c.turma_id == turmaSessao : true) &&
         c.numero == numeroDigitado
     );
 
@@ -189,10 +189,10 @@ function confirmarVoto() {
     }
 
     let cargo = cargos[cargoIndex];
-    if (!cargo) return;
 
     let cand = candidatos.find(c =>
         c.cargo_id == cargo.id &&
+        (turmaSessao ? c.turma_id == turmaSessao : true) &&
         c.numero == numeroDigitado
     );
 
