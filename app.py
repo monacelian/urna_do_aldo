@@ -623,7 +623,17 @@ from waitress import serve
 
 if __name__ == "__main__":
     ip_local = obter_ip_local()
-    print(f">> Servidor rodando em: http://{ip_local}:5000")
+    print("=" * 60)
+    print("           URNA ELETRONICA ESCOLAR - SERVIDOR ATIVO")
+    print("=" * 60)
+    print(f" [Painel Admin]  http://{ip_local}:5000/admin")
+    print(f" [Tela da Urna]  http://{ip_local}:5000/urna")
+    print(f" [Resultados]    http://{ip_local}:5000/resultados")
+    print("=" * 60)
+    print(" [!] Mantenha esta janela aberta enquanto a votacao ocorrer.")
+    print(" [!] Para ENCERRAR o sistema, basta FECHAR esta janela (X).")
+    print("=" * 60)
+    print()
 
     threading.Timer(1.5, abrir_navegador).start()
     serve(app, host="0.0.0.0", port=5000)
